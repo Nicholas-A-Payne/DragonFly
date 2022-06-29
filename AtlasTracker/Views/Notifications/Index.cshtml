@@ -1,0 +1,46 @@
+﻿@model IEnumerable<AtlasTracker.Models.Notification>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<body class="projectBG">
+    <div class="row d-flex justify-content-center">
+
+        <h1 class="text-center text-color-light">All Notifications</h1>
+        @foreach (var item in Model)
+        {
+            <div class="col-6 my-2">
+                <div class="card w-100">
+                    <div class="card-header bg-primary">
+                        <h5 class="card-title text-center"> @Html.DisplayFor(modelItem => item.Title)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <h4>From: @Html.DisplayFor(modelItem => item.Sender.FullName)</h4>
+                            </div>
+                            <div class="col-12">
+                                <h5>To:@Html.DisplayFor(modelItem => item.Recipient.FullName)</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <p>Type: @Html.DisplayFor(modelItem => item.NotificationType.Name)</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>Viewed: @Html.DisplayFor(modelItem => item.Viewed)</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <p>@Html.DisplayFor(modelItem => item.Tickets.Description)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+
+    </div>
+
+</body>

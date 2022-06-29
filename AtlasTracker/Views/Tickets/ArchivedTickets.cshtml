@@ -1,0 +1,109 @@
+﻿@using AtlasTracker.Models.Enum
+@model IEnumerable<AtlasTracker.Models.Ticket>
+
+@{
+    ViewData["Title"] = "ArchivedTickets";
+}
+
+<body class="ticketBG">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Archived Tickets</strong>
+                </div>
+                <div class="card-body">
+                    <table class="table" id="archiveTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Title)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Description)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Created)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Archived)
+                                </th>
+
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Projects)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.TicketPriority)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.TicketTypes)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.TicketStatus)
+                                </th>
+
+                                <th>
+                                    @Html.DisplayNameFor(model => model.DeveloperUser)
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Title)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Description)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Created)
+                                    </td>
+
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Archived)
+                                    </td>
+
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Projects.Name)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.TicketPriority.Name)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.TicketTypes.Name)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.TicketStatus.Name)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.DeveloperUser.Id)
+                                    </td>
+                                    <td>
+                                        <a class="btn btn-outline-warning btn-sm" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
+                                        <a class="btn btn-outline-secondary btn-sm" asp-action="Details" asp-route-id="@item.Id">Details</a>
+                                        @if (User.IsInRole(nameof(AppRole.Admin)) || User.IsInRole(nameof(AppRole.ProjectManager)))
+                                        {
+                                            <a class="btn btn-outline-success btn-sm" asp-action="Restore" asp-route-id="@item.Id">Restore</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+<script>
+        $(document).ready( function () {
+        $('#archiveTable').DataTable();
+    } );
+</script>
+}

@@ -1,0 +1,31 @@
+﻿@model AtlasTracker.Models.Ticket
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<body class="archiveBG">
+    <div class="mb-5">
+        <h1 class="text-color-light text-center">Archive</h1>
+        <hr class="bg-light" />
+    </div>
+    <div class="card shadow">
+        <div class="card-header bg-danger">
+            <h2 class="text-center">Are you sure you want to Archive this ticket?</h2>
+        </div>
+        <div class="card-body">
+            <h4 class="text-center fw-bold my-1">Ticket:   @Html.DisplayFor(model => model.Title)</h4>
+            <h5 class="text-center fw-bolder my-1">For Project:   @Html.DisplayFor(model => model.Projects.Name)</h5>
+            <p class="text-center fw-bold">Ticket Priority: @Html.DisplayFor(model => model.TicketPriority.Name)</p>
+        </div>
+        <div class="card-footer">
+            <form asp-action="Archive">
+                <input type="hidden" asp-for="Id" />
+                <input type="submit" value="Archive" class="btn btn-danger" />
+                <a asp-action="AllTickets">Back to List</a>
+            </form>
+        </div>
+    </div>
+
+</body>
+

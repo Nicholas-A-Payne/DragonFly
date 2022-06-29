@@ -1,0 +1,464 @@
+﻿@model AtlasTracker.Models.ViewModels.DashboardViewModel
+
+@using AtlasTracker.Models.Enum
+@using AtlasTracker.Services.Interfaces
+@using Microsoft.AspNetCore.Identity
+
+@inject IBTCompanyInfoService CompanyInfo
+@inject IBTNotificationService Notifications
+@inject UserManager<AppUser> UserManager
+@{
+    Layout = "NewLayout";
+    AppUser appUser = await UserManager.GetUserAsync(User);
+    List<Notification> notifications = await Notifications.GetReceivedNotificationsAsync(appUser.Id);
+}
+
+<!-- Styles -->
+<style>
+    .amDark {
+        background-color: #30303d;
+        color: #fff;
+    }
+
+    #chartdiv {
+        width: 100%;
+        height: 500px;
+    }
+</style>
+
+<!-- start: page -->
+<body class="pageBG">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary">
+                    <h4 class="text-center fw-bold">Project Priority and Tickets by Status </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="">
+                                <h5>Projects by Priority</h5>
+                                <div id="chart3D"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="donutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <section class="card h-100">
+                <header class="card-header bg-primary w-100">
+
+                    <div>
+                        <h4 class="text-center fw-bold">Active Projects</h4>
+                    </div>
+
+                </header>
+                <div>
+                    <div class="card-body">
+                        <table class="border border-dark">
+                            <thead>
+                                <tr>
+                                    <th class="border border-dark">Title</th>
+
+                                    <th class="border border-dark">Deadline</th>
+                                </tr>
+                            </thead>
+                            @foreach (Project project in Model.Projects)
+                            {
+                                @if (!project.Archived)
+                                {
+                                    <tr>
+                                        <td class="border-dark border-end border-bottom"><a asp-controller="Projects" asp-action="Details" asp-route-id="@project.Id">@project.Name</a></td>
+
+                                        <td class="border-dark border-bottom">@project.EndDate.ToString("MM/dd/yyyy")</td>
+                                    </tr>
+                                }
+                            }
+
+                        </table>
+                        <hr class="solid mt-3 mb-3">
+                        <form method="get" class="form-horizontal form-bordered">
+                            <div class="form-group row">
+                                <div class="col-sm-12">
+                                    @if (User.IsInRole(nameof(AppRole.Admin)) || User.IsInRole(nameof(AppRole.ProjectManager)))
+                                    {
+                                        <button class="btn btn-primary w-100" asp-action="Create" asp-controller="Projects">Create</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-primary" disabled>Create</button>
+                                    }
+
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h4 class="text-center fw-bold">Company Info</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 border">
+                            <h5>Active Projects:</h5>
+                            <h3 class="fw-bolder">@Model.Projects.Where(p => p.StartDate < DateTime.Now && p.EndDate > DateTime.Now).Count()</h3>
+                        </div>
+                        <div class="col-md-6 border">
+                            <h5>Total Tickets:</h5>
+                            <h3 class="fw-bolder">@Model.Tickets.Count()</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 border">
+                            <h5> Unassigned Tickets:</h5>
+                            <h3 class="fw-bolder">@Model.Tickets.Where(t => string.IsNullOrEmpty(t.DeveloperUserId)).Count()</h3>
+                        </div>
+                        <div class="col-md-6 border">
+                            <h5> Total Data:</h5>
+                            <h3 class="fw-bolder">
+                                @(
+                                Model.Projects.Count()
+                                + Model.Tickets.Count()
+                                + Model.Members.Count()
+                                )
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 shadow">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h4 class="text-center fw-bold">Project: Tickets vs Developers</h4>
+                </div>
+                <div class="card-body" style="height:600px">
+                    <!-- HTML -->
+                    <div id="chartdiv"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h4 class="text-center fw-bold">Notifications</h4>
+                </div>
+                <div>
+                    <div class="card-body">
+                        <ul>
+                            @foreach (var notification in notifications)
+                            {
+                                <li>
+                                    <a asp-action="Index" asp-controller="Notifications" class="clearfix">
+                                        <div class="image">
+                                            <i class="fas fa-envolope bg-danger text-light"></i>
+                                        </div>
+                                        <span class="title">@notification.Sender.FullName</span>
+                                        <span class="message">@notification.Created.ToString("MM.dd.yyyy - hh:mm")</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h4 class="text-center fw-bold">Team Members</h4>
+                </div>
+                <div>
+                    <div class="card-body">
+                        <ul class="right_chat list-unstyled mb-0">
+                            @foreach (AppUser member in await CompanyInfo.GetAllMembersAsync(Model.Company.Id))
+                            {
+                                <li class="">
+                                    <div class="row">
+                                        <div class="col-2">
+                                            <a>
+                                                <div class="media">
+                                                    @if (member.AvatarData != null)
+                                                    {
+                                                        <img class="" style="width:50px;height:50px;" src="data:image/*;base64,@(Convert.ToBase64String(member.AvatarData))" alt="https://cdn.icon-icons.com/icons2/1378/PNG/512/avatardefault_92824.png" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <img class="" style="width:50px;height:50px;" src="https://cdn.icon-icons.com/icons2/1378/PNG/512/avatardefault_92824.png" alt="" />
+                                                    }
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="">
+                                                <span class="">@member.FullName</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="" style="font-size:x-small">[@((await UserManager.GetRolesAsync(member)).FirstOrDefault())]</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+@section scripts{
+<script>
+    var message = '@(ViewBag.SwalMessage)';
+    if(message != '')
+    {
+        Swal.fire({
+            icon: 'success',
+            title: message,
+            showConfirmButton: true
+        })
+    }
+</script>
+
+<!--  Plotly Charts  -->
+<!-- Load plotly.js into the DOM -->
+<script src='https://cdn.plot.ly/plotly-2.4.2.min.js'></script>
+<script>
+    $.ajax({
+        type: "POST",
+        url: "/Home/PlotlyBarChart",
+        data: '{}',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (result) {
+            var data = result;
+
+            var layout = {barmode: 'group'};
+
+            Plotly.newPlot('plotlyChart', data, layout);
+            },
+            failure: function (result) {
+                alert(result.d);
+            },
+            error: function (result) {
+                alert(result.d);
+            }
+        });
+</script>
+
+<!-- *** Begin Chart JS Pie/Donut *** -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.6.0/dist/chart.min.js"></script>
+<script>
+
+    var donutChartCanvas = $('#donutChart').get(0).getContext('2d');
+    var donutData = {
+        labels: [
+            '@nameof(EnumTicketStatus.Development)',
+            '@nameof(EnumTicketStatus.New)',
+            '@nameof(EnumTicketStatus.Resolved)',
+            '@nameof(EnumTicketStatus.Testing)'
+        ],
+        datasets: [
+            {
+                data: [
+                    @Model.Tickets.Where(t=> t.TicketStatus.Name == nameof(EnumTicketStatus.Development)).Count(),
+                    @Model.Tickets.Where(t=> t.TicketStatus.Name ==nameof(EnumTicketStatus.New)).Count(),
+                    @Model.Tickets.Where(t=> t.TicketStatus.Name ==nameof(EnumTicketStatus.Resolved)).Count(),
+                    @Model.Tickets.Where(t=> t.TicketStatus.Name ==nameof(EnumTicketStatus.Testing)).Count()
+                ],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ]
+            }
+        ]
+    };
+
+    var donutOptions = {
+        maintainAspectRatio: false,
+        responsive: true,
+    };
+    //Create pie or douhnut chart
+    // You can switch between pie and douhnut using the method below.
+    new Chart(donutChartCanvas, {
+        type: 'doughnut',
+        data: donutData,
+        options: donutOptions
+    });
+</script>
+<!-- *** End Chart JS Donut *** -->
+<!--Google Charts-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript">
+    google.load("visualization", "1", { packages: ["corechart"] });
+    google.setOnLoadCallback(drawChart);
+    function drawChart() {
+        $.ajax({
+            type: "POST",
+            url: "/Home/GglProjectPriority",
+            data: '{}',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                var data = google.visualization.arrayToDataTable(result);
+
+                //3D Pie
+                var options = {
+                    title: 'Project Priority',
+                    is3D: true,
+                    chartArea: { left: 0,bottom: 15,width: '100%', height: '100%'},
+                    legend: { position: 'bottom' }
+
+                };
+
+                var chart = new google.visualization.PieChart($("#chart3D")[0]);
+                chart.draw(data, options);
+            },
+            failure: function (rresult) {
+                alert(result.d);
+            },
+            error: function (result) {
+                alert(result.d);
+            }
+        });
+    }
+</script>
+<script type="text/javascript">
+    google.load("visualization", "1", { packages: ["corechart"] });
+    google.setOnLoadCallback(drawChart);
+    function drawChart() {
+        $.ajax({
+            type: "POST",
+            url: "/Home/GglProjectPriority",
+            data: '{}',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                var data = google.visualization.arrayToDataTable(result);
+
+                //Donut
+                var options = {
+                    title: 'Company Ticket Distribution',
+                    pieHole: 0.3,
+                    chartArea: { left: 0,bottom: 15,width: '100%', height: '100%'},
+                    legend: { position: 'bottom' }
+                };
+                var chart = new google.visualization.PieChart($("#donut")[0]);
+                chart.draw(data, options);
+            },
+            failure: function (rresult) {
+                alert(result.d);
+            },
+            error: function (result) {
+                alert(result.d);
+            }
+        });
+    }
+</script>
+
+<!-- *** Begin AM Charts *** -->
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+
+<!-- Chart code -->
+<script>
+    $.ajax({
+        type: "POST",
+        url: "/Home/AmCharts",
+        data: '{}',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (result) {
+            am4core.ready(function() {
+
+                // Themes begin
+                // Themes end
+
+                 // Create chart instance
+                var chart = am4core.create("chartdiv", am4charts.XYChart);
+
+
+                // Add data
+                chart.data = result;
+
+                // Create axes
+                var categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
+                categoryAxis.dataFields.category = "project";
+                categoryAxis.numberFormatter.numberFormat = "#";
+                categoryAxis.renderer.inversed = true;
+                categoryAxis.renderer.grid.template.location = 0;
+                categoryAxis.renderer.cellStartLocation = 0.1;
+                categoryAxis.renderer.cellEndLocation = 0.9;
+
+                var  valueAxis = chart.xAxes.push(new am4charts.ValueAxis());
+                valueAxis.renderer.opposite = true;
+
+                // Create series
+                function createSeries(field, name) {
+                  var series = chart.series.push(new am4charts.ColumnSeries());
+                  series.dataFields.valueX = field;
+                  series.dataFields.categoryY = "project";
+                  series.name = name;
+                  series.columns.template.tooltipText = "{name}: [bold]{valueX}[/]";
+                  series.columns.template.height = am4core.percent(100);
+                  series.sequencedInterpolation = true;
+
+                  var valueLabel = series.bullets.push(new am4charts.LabelBullet());
+                  valueLabel.label.text = "{valueX}";
+                  valueLabel.label.horizontalCenter = "left";
+                  valueLabel.label.dx = 10;
+                  valueLabel.label.hideOversized = false;
+                  valueLabel.label.truncate = false;
+
+                  var categoryLabel = series.bullets.push(new am4charts.LabelBullet());
+                  categoryLabel.label.text = "{name}";
+                  categoryLabel.label.horizontalCenter = "right";
+                  categoryLabel.label.dx = -10;
+                  categoryLabel.label.fill = am4core.color("#fff");
+                  categoryLabel.label.hideOversized = false;
+                  categoryLabel.label.truncate = false;
+                }
+
+                createSeries("tickets", "Tickets");
+                createSeries("developers", "Devs");
+
+            }); // end am4core.ready()
+
+
+        },
+        failure: function (result) {
+            alert(result.d);
+        },
+        error: function (result) {
+            alert(result.d);
+        }
+    });
+</script>
+
+<!-- *** End AM Charts *** -->
+}
+
+
